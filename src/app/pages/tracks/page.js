@@ -40,36 +40,41 @@ export default function Page() {
         : "/placeholder.png";
 
       return (
-        <div
-          key={index}
-          className="bg-white shadow-md rounded-xl overflow-hidden hover:shadow-lg transition flex flex-col items-center"
-        >
-          {/* Fő kép - fix méret, arányos */}
-          <Image
-            src={lastImageUrl}
-            alt={track.Name || "Track"}
-            width={250}  // kártya szélességhez igazítva
-            height={140} // kártya magasság
-            className="object-contain"
-          />
-
-          {/* Track neve */}
-          <div className="p-4 flex flex-col items-center w-full">
-            <h2 className="text-lg font-semibold text-center">{track.Name}</h2>
-
-            {/* Ország info */}
-            <div className="flex items-center mt-2">
+          <div className="bg-white shadow-md rounded-xl overflow-hidden hover:shadow-lg transition flex flex-col items-center" key={track._id}>
+            {/* Fő kép konténer */}
+            <div className="relative w-[250px] h-[140px]">
               <Image
-                src={track.Country?.Flag || "/placeholder-flag.png"}
-                alt={track.Country?.Name || "Country"}
-                width={20}
-                height={12}
-                className="rounded-sm mr-2"
+                src={lastImageUrl}
+                alt={track.Name || "Track"}
+                fill
+                style={{ objectFit: "contain" }}
+                className="rounded-t-xl"
+                sizes="250px"
+                priority
               />
-              <span className="text-gray-600 text-sm">{track.Country?.Name}</span>
+            </div>
+
+            {/* Track neve */}
+            <div className="p-4 flex flex-col items-center w-full">
+              <h2 className="text-lg font-semibold text-center">{track.Name}</h2>
+
+              {/* Ország info */}
+              <div className="flex items-center mt-2">
+                <div className="relative w-[20px] h-[12px]">
+                  <Image
+                    src={track.Country?.Flag || "/placeholder-flag.png"}
+                    alt={track.Country?.Name || "Country"}
+                    fill
+                    style={{ objectFit: "contain" }}
+                    className="rounded-sm"
+                    sizes="20px"
+                  />
+                </div>
+                <span className="text-gray-600 text-sm ml-2">{track.Country?.Name}</span>
+              </div>
             </div>
           </div>
-        </div>
+
       );
     })}
   </main>

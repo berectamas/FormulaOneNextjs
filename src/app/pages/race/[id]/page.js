@@ -182,16 +182,18 @@ const getTimeDisplay = (info, first, firstInfo) => {
       key={`${info._id}-${info.Position}`}
       className="flex items-center px-3 py-2 border rounded shadow"
     >
-      <div className="w-[60px] font-bold text-lg">{info.Position}</div>
+      <div className="w-[40px] font-bold text-lg">{info.Position}</div>
 
-      <div className="w-[60px]">
+      <div className="w-[80px] h-[80px] relative">
         {info.Driver?.Images?.[0]?.ImageUrl && (
           <Image
             src={info.Driver.Images[0].ImageUrl}
-            alt={info.Driver.FirstName + " " + info.Driver.LastName}
-            width={50}
-            height={50}
+            alt={`${info.Driver.FirstName} ${info.Driver.LastName}`}
+            fill
+            sizes="60px"
+            style={{ objectFit: "contain" }}
             className="rounded-full"
+            priority={idx === 0} // az első kép legyen előtöltve, ha above-the-fold
           />
         )}
       </div>

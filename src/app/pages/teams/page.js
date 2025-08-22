@@ -40,13 +40,17 @@ export default function Page() {
           className="bg-white shadow-md rounded-xl overflow-hidden hover:shadow-lg transition flex flex-col items-center"
         >
           {/* Fő kép - fix méret, arányos */}
-          <Image
-            src={team.Logo || "/f1.png"}
-            alt={team.Name || "Team"}
-            width={250}  // kártya szélességhez igazítva
-            height={140} // kártya magasság
-            className="object-contain"
-          />
+         <div className="relative w-[250px] h-[140px]">
+            <Image
+              src={team.Logo || "/f1.png"}
+              alt={team.Name || "Team"}
+                fill
+                style={{ objectFit: "contain" }}
+                className="rounded-t-xl"
+                sizes="250px"
+                priority
+            />
+          </div>
 
           {/* Track neve */}
           <div className="p-4 flex flex-col items-center w-full">
@@ -54,13 +58,17 @@ export default function Page() {
 
             {/* Ország info */}
             <div className="flex items-center mt-2">
-              <Image
-                src={team.Country?.Flag || "/f1.png"}
-                alt={team.Country?.Name || "Country"}
-                width={20}
-                height={12}
-                className="rounded-sm mr-2"
-              />
+              <div className="relative w-[20px] h-[12px]">
+                <Image
+                  src={team.Country?.Flag || "/f1.png"}
+                  alt={team.Country?.Name || "Country"}
+                    fill
+                    style={{ objectFit: "contain" }}
+                    className="rounded-md"
+                    sizes="20px"
+                    priority
+                />
+              </div>
               <span className="text-gray-600 text-sm">{team.Country?.Name}</span>
             </div>
           </div>

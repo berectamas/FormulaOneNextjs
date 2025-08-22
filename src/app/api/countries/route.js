@@ -2,10 +2,6 @@ import clientPromise from "../../lib/mongodb";
 import { ObjectId } from "mongodb";
 
 export async function GET(req) {
-  const url = new URL(req.url);
-  const _id = url.searchParams.get("_id");
-  console.log("_id:", _id);
-
   try {
     const client = await clientPromise;
     const db = client.db("FormulaOne");

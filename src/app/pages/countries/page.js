@@ -1,10 +1,8 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function Page() {
-  const searchParams = useSearchParams();
   //const _year = searchParams.get("year");
 
   const [countries, setCountries] = useState([]);

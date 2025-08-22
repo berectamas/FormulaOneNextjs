@@ -49,7 +49,10 @@ export default function Page() {
 
 
           return (
-            <Link href={`/pages/race/${event._id}`} className="block">
+            <Link href={`/pages/race/${event._id}`} 
+                  className="block"
+                  key={event._id} 
+            >
               <li
                 key={event._id}
                 className="border rounded shadow hover:shadow-lg transition overflow-hidden flex flex-col md:flex-row cursor-pointer"

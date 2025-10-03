@@ -3,6 +3,7 @@ import Link from "next/link";
 
 export default function Navbar() {
   const currentYear = new Date().getFullYear();
+  const year = new Date().getFullYear();
   return (
     <nav className="w-full bg-black text-white shadow-md">
       <div className="flex justify-between h-16 items-center px-4 sm:px-6 lg:px-8">
@@ -29,7 +30,13 @@ export default function Navbar() {
           <Link href={`/pages/calendars?year=${currentYear}`} className="hover:text-gray-300">
             Calendar
           </Link>
-          <Link href="/pages/standings" className="hover:text-gray-300">Standings</Link>
+          <Link href={{
+              pathname: `/pages/standings/${year}`,
+            }}
+            className="hover:text-gray-300">
+              Standings
+          </Link>
+
         </div>
 
       </div>

@@ -1,6 +1,6 @@
 import clientPromise from "../../lib/mongodb";
 
-export async function GET(req) {
+export async function GET(req, { params }) {
   try {
     const client = await clientPromise;
     const db = client.db("FormulaOne");

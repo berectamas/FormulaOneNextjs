@@ -254,7 +254,7 @@ export default function RacePage() {
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold mb-4">
-        {currentCalendar.Name} - {currentCalendar.Year}
+        {currentCalendar ? `${currentCalendar.Name} - ${currentCalendar.Year}` : 'Loading...'}
       </h1>
 
       {/* Tab gombok */}

@@ -11,12 +11,12 @@ export default function Dashboard() {
   const { year } = useParams();
   const columnName = [
     'Points',
-    'AVG Points',
+    /*'AVG Points',
     'Qualifying Results',
     'Grid Position',
     'Race Results',
     'Time Differences',
-    'Compare Results',
+    'Compare Results',*/
   ];
   const subColumnName = ['Q1', 'Q2', 'Q3'];
   const [raceInfos, setRaceInfos] = useState([]);

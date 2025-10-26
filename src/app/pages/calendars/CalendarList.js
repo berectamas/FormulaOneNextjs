@@ -1,20 +1,37 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function CalendarList({ year, events }) {
+  //if (!events || !events.length) return <div className="p-8 text-center">No events found</div>;
   if (!events || !events.length)
-    return <div className="p-8 text-center">No events found</div>;
-
+    return (
+      <div className="p-8 text-center">
+        <p className="mb-4">Nincs esemény a {year}. évben.</p>
+        <Link
+          href="/races/new"
+          className="btn btn-dark rounded-circle shadow d-inline-flex justify-content-center align-items-center"
+          style={{ width: '80px', height: '80px', fontSize: '2rem' }}
+          title="Új verseny hozzáadása"
+        >
+          +
+        </Link>
+      </div>
+    );
   return (
     <div className="max-w-3xl mx-auto p-4">
+      <div className="text-center mb-4">
+        <Link href="/pages/race/new" title="Új verseny felvétele">
+          Új esemény felvétele
+        </Link>
+      </div>
       <h1 className="text-3xl font-bold mb-6">F1 Calendar {year}</h1>
       <ul className="space-y-8">
         {events.map((event) => {
           const lastSpec = event.Track?.Specifications?.[event.Track.Specifications.length - 1];
           const trackImageUrl = lastSpec?.Images?.length
             ? lastSpec.Images[lastSpec.Images.length - 1].URL
-            : "/f1.png";
+            : '/f1.png';
 
           return (
             <Link href={`/pages/race/${event._id}`} key={event._id} className="block">
@@ -22,7 +39,7 @@ export default function CalendarList({ year, events }) {
                 <div className="flex-shrink-0 w-full md:w-48 h-32 md:h-auto overflow-hidden">
                   <img
                     src={trackImageUrl}
-                    alt={event.Track?.Name || "Track"}
+                    alt={event.Track?.Name || 'Track'}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -43,9 +60,7 @@ export default function CalendarList({ year, events }) {
                       <span>{event.Track.Country.Name}</span>
                     </div>
                   )}
-                  {event.IsSprintEvent && (
-                    <p className="text-sm text-red-500 mt-1">Sprint Event</p>
-                  )}
+                  {event.IsSprintEvent && <p className="text-sm text-red-500 mt-1">Sprint Event</p>}
                 </div>
               </li>
             </Link>

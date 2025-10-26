@@ -23,6 +23,7 @@ export default function StandingTable({
   };
 
   const formatNumber = (value) => {
+    console.log(value);
     return Number.isInteger(value) ? value.toString() : value.toFixed(2);
   };
 
@@ -37,9 +38,8 @@ export default function StandingTable({
           <tr>
             <th className="px-4 py-2 text-left">Position</th>
             <th className="px-4 py-2 text-left">Name</th>
-            {columnName && (
-              <th className="px-4 py-2 text-left">{columnName.split(' ').slice(-1)[0]}</th>
-            )}
+            {columnName && <th className="px-4 py-2 text-left">{columnName}</th>}
+
             <th className="px-4 py-2 text-center">Compare</th>
           </tr>
         </thead>
@@ -58,7 +58,7 @@ export default function StandingTable({
                     <p className="ml-3 mb-0">{getName(findById(entry.id))}</p>
                   </div>
                 </td>
-                {columnName && <td className="px-4 py-2">{formatNumber(entry.value)}</td>}
+                {columnName && <td className="px-4 py-2">{formatNumber(entry.points)}</td>}
                 {/* Itt javítjuk a hibát: <input> belül <td> */}
                 <td className="px-4 py-2 text-center">
                   <input

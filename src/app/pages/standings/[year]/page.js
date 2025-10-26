@@ -257,6 +257,7 @@ export default function Dashboard() {
             findById={findById}
             isDriver={isDriver}
             onDriverCheckedChange={handleDriverCheckedChange}
+            columnName="Points"
           />
         </div>
 

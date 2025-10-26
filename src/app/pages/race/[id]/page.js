@@ -335,7 +335,7 @@ export default function RacePage() {
               <div className="w-[100px] text-right">
                 {info.RaceEvent % 4 === 0 ? (
                   <p className="font-bold text-lg">
-                    + {f1CurrentPoints[info.RaceEvent / 4][info.Position - 1] ?? 0}
+                    + {f1CurrentPoints[info.RaceEvent / 4][info.Position - 1] ?? 0} pts
                   </p>
                 ) : (
                   <p className="font-bold text-lg">{formatTime(info)}</p>
@@ -346,7 +346,12 @@ export default function RacePage() {
                   ? formatTime(info)
                   : getTimeDisplay(info, idx === 0, filteredRaceInfos[0])}
               </p>
-              <p className="text-sm text-gray-600">{formatTime(info)}</p>
+              {(() => {
+                const t = getTimeDisplay(info, idx === 0, filteredRaceInfos[0]);
+                return !['DNF', 'DNS', 'DSQ'].includes(t) && !t.includes('lap') ? (
+                  <p className="text-sm text-gray-600">{formatTime(info)}</p>
+                ) : null;
+              })()}
             </div>
           </div>
         ))}

@@ -118,6 +118,10 @@ export default function RacePage() {
     if (first) {
       return isZeroTime ? '-' : formatTime(info);
     }
+    const diff = firstInfo.LapsCompleted - info.LapsCompleted;
+    if (firstInfo && diff !== 0) {
+      return '+' + diff.toString() + ' lap' + (diff > 1 ? 's' : '');
+    }
 
     if (!isZeroTime && firstInfo) {
       // Delta az elsőhöz képest a tabon belül

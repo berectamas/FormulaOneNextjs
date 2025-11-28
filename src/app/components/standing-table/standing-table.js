@@ -2,11 +2,11 @@ import React from 'react';
 
 export default function StandingTable({
   standings = [],
-  driverChecked = {},
+  checked = {},
   findById,
   columnName = '',
   isDriver,
-  onDriverCheckedChange = () => {},
+  onCheckedChange = () => {},
 }) {
   const getName = (entry) => {
     if (!entry) return '';
@@ -18,12 +18,11 @@ export default function StandingTable({
     if (isDriver(entry)) {
       return entry.Images && entry.Images.length > 0 ? entry.Images[0].ImageUrl : '';
     } else {
-      return entry.logo ?? '';
+      return entry.Logo ?? '';
     }
   };
 
   const formatNumber = (value) => {
-    console.log(value);
     return Number.isInteger(value) ? value.toString() : value.toFixed(2);
   };
 
@@ -53,7 +52,7 @@ export default function StandingTable({
                     <img
                       src={getImg(findById(entry.id))}
                       alt={getName(findById(entry.id))}
-                      className="w-10 h-10 rounded-xl object-cover"
+                      className="w-12 h-10 rounded-xl object-cover"
                     />
                     <p className="ml-3 mb-0">{getName(findById(entry.id))}</p>
                   </div>
@@ -64,8 +63,8 @@ export default function StandingTable({
                   <input
                     type="checkbox"
                     className="form-checkbox h-4 w-4 text-blue-600"
-                    checked={driverChecked[entry.id] || false}
-                    onChange={() => onDriverCheckedChange(entry.id)}
+                    checked={checked[entry.id] || false}
+                    onChange={() => onCheckedChange(entry.id)}
                   />
                 </td>
               </tr>

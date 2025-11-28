@@ -1,43 +1,45 @@
-import clientPromise from "../../../../lib/mongodb";
+import clientPromise from '../../../../lib/mongodb';
 
 export async function GET(req, { params }) {
   const { year } = await params;
 
   try {
     const client = await clientPromise;
-    const db = client.db("FormulaOne");
+    const db = client.db('FormulaOne');
     const yearNumber = parseInt(year, 10);
-        if (isNaN(yearNumber)) {
-        return new Response(JSON.stringify({ error: "Invalid year parameter" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-        });
-        }
-    const raceArray = await db.collection("RaceInformations").aggregate([
-      // Track csatlakoztatása
-      {
-        $lookup: {
-          from: "Calendars",
-          localField: "CalendarId",
-          foreignField: "_id",
-          as: "Calendar",
+    if (isNaN(yearNumber)) {
+      return new Response(JSON.stringify({ error: 'Invalid year parameter' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const raceArray = await db
+      .collection('RaceInformations')
+      .aggregate([
+        // Track csatlakoztatása
+        {
+          $lookup: {
+            from: 'Calendars',
+            localField: 'CalendarId',
+            foreignField: '_id',
+            as: 'Calendar',
+          },
         },
-      },
-      { $unwind: { path: "$Calendar", preserveNullAndEmptyArrays: true } },
-        { $match: { "Calendar.Year": yearNumber} }, // pl. 2025-re szűrés
+        { $unwind: { path: '$Calendar', preserveNullAndEmptyArrays: true } },
+        { $match: { 'Calendar.Year': yearNumber } }, // pl. 2025-re szűrés
 
-      //Track csatlakoztatása
+        //Track csatlakoztatása
 
-    {
-        $lookup: {
-          from: "Tracks",
-          localField: "Calendar.TrackId",
-          foreignField: "_id",
-          as: "Calendar.Track",
+        {
+          $lookup: {
+            from: 'Tracks',
+            localField: 'Calendar.TrackId',
+            foreignField: '_id',
+            as: 'Calendar.Track',
+          },
         },
-      },
-      { $unwind: { path: "$Calendar.Track", preserveNullAndEmptyArrays: true } },
-      /*
+        { $unwind: { path: '$Calendar.Track', preserveNullAndEmptyArrays: true } },
+        /*
       // Country csatlakoztatása a Track-hez
       {
         $lookup: {
@@ -48,7 +50,7 @@ export async function GET(req, { params }) {
         },
       },
       { $unwind: { path: "$Calendar.Track.Country", preserveNullAndEmptyArrays: true } },*/
-      /*
+        /*
       // TrackSpecifications csatlakoztatása
       {
         $lookup: {
@@ -70,20 +72,19 @@ export async function GET(req, { params }) {
         },
       },*/
 
-
-      // Driver és Team adatok csatlakoztatása minden eredményhez
-      //{ $unwind: { path: "$Calendar.Track.TrackSpecifications.Images", preserveNullAndEmptyArrays: true } },
-      {
-        $lookup: {
-          from: "Drivers",
-          localField: "DriverId",
-          foreignField: "_id",
-          as: "Driver",
+        // Driver és Team adatok csatlakoztatása minden eredményhez
+        //{ $unwind: { path: "$Calendar.Track.TrackSpecifications.Images", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'Drivers',
+            localField: 'DriverId',
+            foreignField: '_id',
+            as: 'Driver',
+          },
         },
-      },
-      { $unwind: { path: "$Driver", preserveNullAndEmptyArrays: true } },
-      // Country csatlakoztatása
-      /*
+        { $unwind: { path: '$Driver', preserveNullAndEmptyArrays: true } },
+        // Country csatlakoztatása
+        /*
       {
         $lookup: {
           from: "Countries",
@@ -112,17 +113,17 @@ export async function GET(req, { params }) {
         },
       },
       //{ $unwind: { path: "$Driver.Years", preserveNullAndEmptyArrays: true } },*/
-      {
-        $lookup: {
-          from: "Teams",
-          localField: "TeamId",
-          foreignField: "_id",
-          as: "Team",
+        {
+          $lookup: {
+            from: 'Teams',
+            localField: 'TeamId',
+            foreignField: '_id',
+            as: 'Team',
+          },
         },
-      },
-      { $unwind: { path: "$Team", preserveNullAndEmptyArrays: true } },
-            // Country csatlakoztatása
-      /*{
+        { $unwind: { path: '$Team', preserveNullAndEmptyArrays: true } },
+        // Country csatlakoztatása
+        /*{
         $lookup: {
           from: "Countries",
           localField: "Team.CountryId",
@@ -131,44 +132,49 @@ export async function GET(req, { params }) {
         },
       },
       { $unwind: { path: "$Team.Country", preserveNullAndEmptyArrays: true } },*/
-      {
-        $lookup: {
-          from: "TeamByYear",
-          localField: "TeamId",
-          foreignField: "TeamId",
-          as: "Team.Years",
+        {
+          $lookup: {
+            from: 'TeamByYear',
+            localField: 'TeamId',
+            foreignField: 'TeamId',
+            as: 'Team.Years',
+          },
         },
-      },
 
-    /*{
+        /*{
       $addFields: {
         "Driver.Years": { $sortArray: { input: "$Driver.Years", sortBy: { Year: 1 } } },
         "Team.Years": { $sortArray: { input: "$Team.Years", sortBy: { Year: 1 } } }
       }
     }*/
-
-    ]).toArray();
-
+        {
+          $sort: {
+            'Calendar.Round': 1,
+            RaceEvent: 1,
+            Position: 1,
+          },
+        },
+      ])
+      .toArray();
 
     const races = raceArray;
 
     if (!races.length) {
-      return new Response(JSON.stringify({ error: "Race not found" }), {
+      return new Response(JSON.stringify({ error: 'Race not found' }), {
         status: 404,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(JSON.stringify(races), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
-    console.error("API error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Internal error" }), {
+    console.error('API error:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }

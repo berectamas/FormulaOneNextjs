@@ -28,32 +28,52 @@ export default function RacePage() {
   const [teams, setTeams] = useState([]);
   const [calendars, setCalendars] = useState([]);
   const [currentCalendar, setcurrentCalendar] = useState(null);
-
-  // API hívás a versenyzők és csapatok lekérésére
+  const FinishingStatus = [
+    { id: 0, label: 'Finished' },
+    { id: 1, label: 'DNF' },
+    { id: 2, label: 'DSQ' },
+    { id: 3, label: 'DNS' },
+  ];
+  const FinishingStatusMap = Object.fromEntries(
+    FinishingStatus.filter((x) => x.id !== 0) // 🔥 itt szűrsz
+      .map((x) => [x.id, x.label]),
+  ); // API hívás a versenyzők és csapatok lekérésére
   useEffect(() => {
+    async function fetchCurrentCalendar() {
+      try {
+        const res = await fetch(`/api/calendars/${id}`);
+        const data = await res.json();
+        setcurrentCalendar(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchCurrentCalendar();
+  }, [id]);
+  useEffect(() => {
+    if (!currentCalendar?.Year) return;
+
     async function fetchDropdownData() {
       try {
-        const [driversRes, teamsRes, calRes, currentCalRes] = await Promise.all([
-          fetch('/api/drivers'),
-          fetch('/api/teams'),
-          fetch('/api/calendars'),
-          fetch(`/api/calendars/${id}`),
-        ]);
-        const driversData = await driversRes.json();
-        const teamsData = await teamsRes.json();
-        const calsData = await calRes.json();
-        const currentCalendarData = await currentCalRes.json();
+        const year = currentCalendar.Year;
 
-        setDrivers(driversData);
-        setTeams(teamsData);
-        setCalendars(calsData);
-        setcurrentCalendar(currentCalendarData);
+        const [driversRes, teamsRes, calRes] = await Promise.all([
+          fetch(`/api/drivers/year/${year}`),
+          fetch(`/api/teams/year/${year}`),
+          fetch('/api/calendars'),
+        ]);
+
+        setDrivers(await driversRes.json());
+        setTeams(await teamsRes.json());
+        setCalendars(await calRes.json());
       } catch (err) {
         console.error('Dropdown fetch error:', err);
       }
     }
+
     fetchDropdownData();
-  }, []);
+  }, [currentCalendar?.Year]);
 
   const raceEventTypes = [
     { label: 'Race', value: 0 },
@@ -94,6 +114,7 @@ export default function RacePage() {
   const filteredRaceInfos = sortedRaceInfos.filter(
     (info) => info.RaceEvent === raceEventTypes[activeTab].value,
   );
+  console.log(filteredRaceInfos);
 
   const formatTime = (info) => {
     if (!info || info.Hours === undefined) return null;
@@ -108,9 +129,10 @@ export default function RacePage() {
 
   const getTimeDisplay = (info, first, firstInfo) => {
     // Ellenőrizzük a FinishingStatus-t
-    if (info.FinishingStatus === 1) return 'DNF';
-    if (info.FinishingStatus === 2) return 'DSQ';
-    if (info.FinishingStatus === 3) return 'DNS';
+    const label = FinishingStatusMap[info.FinishingStatus] ?? null;
+    if (label) {
+      return label;
+    }
 
     const isZeroTime =
       info.Hours === 0 && info.Minutes === 0 && info.Seconds === 0 && info.Miliseconds === 0;
@@ -213,7 +235,9 @@ export default function RacePage() {
       deltaS = Math.floor((totalDeltaMs % 60000) / 1000);
       deltaMS = totalDeltaMs % 1000;
     }
-
+    const TimeEnable =
+      firstInfo.LapsCompleted === newRowData.LapsCompleted &&
+      Number(newRowData.FinishingStatus) === 0;
     const newInfo = {
       _id: Date.now(), // ideiglenes ID
       CalendarId: id,
@@ -224,11 +248,14 @@ export default function RacePage() {
       TeamId: newRowData.TeamId,
       Team: teams.find((f) => f._id === newRowData.TeamId),
       LapsCompleted: Number(newRowData.LapsCompleted),
-      Hours: deltaH,
-      Minutes: deltaM,
-      Seconds: deltaS,
-      Miliseconds: deltaMS,
-      FinishingStatus: Number(newRowData.FinishingStatus),
+      Hours: TimeEnable ? deltaH : 0,
+      Minutes: TimeEnable ? deltaM : 0,
+      Seconds: TimeEnable ? deltaS : 0,
+      Miliseconds: TimeEnable ? deltaMS : 0,
+      FinishingStatus:
+        newRowData.RaceEvent === 0 || newRowData.RaceEvent === 4
+          ? Number(newRowData.FinishingStatus)
+          : 0,
       RaceEvent: newRowData.RaceEvent,
       GridPosition: Number(newRowData.GridPosition),
       IsFastestLapOnTheRace: false,
@@ -302,29 +329,25 @@ export default function RacePage() {
         {filteredRaceInfos.map((info, idx) => (
           <div
             key={`${info._id}-${info.Position}`}
-            className="flex items-center px-3 py-2 border rounded shadow"
+            className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 transition border"
           >
-            <div className="w-[40px] font-bold text-lg">{info.Position}</div>
+            <div className="w-10 text-center font-bold text-lg text-gray-800">{info.Position}</div>
 
-            <div className="w-[80px] h-[80px] relative">
-              {info.Driver?.Images?.[0]?.ImageUrl && (
-                <Image
-                  src={info.Driver.Images[0].ImageUrl}
-                  alt={`${info.Driver.FirstName} ${info.Driver.LastName}`}
-                  fill
-                  sizes="60px"
-                  style={{ objectFit: 'contain' }}
-                  className="rounded-full"
-                  priority={idx === 0} // az első kép legyen előtöltve, ha above-the-fold
-                />
-              )}
+            <div className="w-2 h-10 rounded-full overflow-hidden">
+              <div
+                className="h-full w-full"
+                style={{
+                  backgroundColor: info.Team?.Years?.[0]?.Color || '#999',
+                }}
+              />
             </div>
 
-            <div className="flex-1">
-              <p className="font-medium">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 truncate">
                 {info.Driver?.FirstName} {info.Driver?.LastName}
               </p>
-              <p className="text-sm text-gray-500">{info.Team?.Name}</p>
+
+              <p className="text-xs text-gray-500 truncate">{info.Team?.Name}</p>
             </div>
 
             {info.RaceEvent % 4 === 0 && (
@@ -348,7 +371,7 @@ export default function RacePage() {
               </p>
               {(() => {
                 const t = getTimeDisplay(info, idx === 0, filteredRaceInfos[0]);
-                return !['DNF', 'DNS', 'DSQ'].includes(t) && !t.includes('lap') ? (
+                return !Object.values(FinishingStatusMap).includes(t) && !t.includes('lap') ? (
                   <p className="text-sm text-gray-600">{formatTime(info)}</p>
                 ) : null;
               })()}
@@ -489,6 +512,33 @@ export default function RacePage() {
                     value={newRowData.Miliseconds}
                     onChange={(e) => setNewRowData({ ...newRowData, Miliseconds: e.target.value })}
                   />
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <div className="flex gap-3">
+                  {FinishingStatus.map((item) => (
+                    <label
+                      key={item.id}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition
+          ${newRowData.FinishingStatus === item.id ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}
+        `}
+                    >
+                      <input
+                        type="radio"
+                        name="finishingStatus"
+                        value={item.id}
+                        checked={newRowData.FinishingStatus === item.id}
+                        onChange={(e) =>
+                          setNewRowData({
+                            ...newRowData,
+                            FinishingStatus: Number(e.target.value),
+                          })
+                        }
+                        className="hidden"
+                      />
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>

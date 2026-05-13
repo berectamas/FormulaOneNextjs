@@ -25,7 +25,7 @@ export default function StandingTable({
   const getColor = (entry) => {
     if (!entry) return '';
     if (isDriver(entry)) {
-      return '#000000';
+      return entry.RaceInformations[0]?.Team?.TeamByYear?.Color ?? '#00000';
     } else {
       return entry.Years[entry.Years.length - 1].Color ?? '#000000';
     }

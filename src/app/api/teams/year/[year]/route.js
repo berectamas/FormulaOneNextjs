@@ -1,8 +1,9 @@
 import clientPromise from '../../../../lib/mongodb';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    const { year } = params;
+    const params = await context.params;
+    const year = params.year;
     const client = await clientPromise;
     const db = client.db('FormulaOne');
     const yearNumber = parseInt(year, 10);

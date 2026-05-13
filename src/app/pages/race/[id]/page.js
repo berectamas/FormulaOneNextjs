@@ -236,8 +236,9 @@ export default function RacePage() {
       deltaMS = totalDeltaMs % 1000;
     }
     const TimeEnable =
-      firstInfo.LapsCompleted === newRowData.LapsCompleted &&
-      Number(newRowData.FinishingStatus) === 0;
+      !firstInfo ||
+      (firstInfo.LapsCompleted === newRowData.LapsCompleted &&
+        Number(newRowData.FinishingStatus) === 0);
     const newInfo = {
       _id: Date.now(), // ideiglenes ID
       CalendarId: id,

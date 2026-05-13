@@ -12,7 +12,26 @@ export async function GET(req, { params }) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    const teams = await db.collection('Teams').find({}).toArray();
+    const teams = await db
+      .collection('Teams')
+      .aggregate([
+        // DriverYears csatlakoztatása
+        {
+          $lookup: {
+            from: 'TeamByYear',
+            localField: '_id',
+            foreignField: 'TeamId',
+            as: 'Years',
+          },
+        },
+        // csak azok, ahol van yearNumber
+        {
+          $match: {
+            'Years.Year': yearNumber,
+          },
+        },
+      ])
+      .toArray();
     if (!teams || teams.length === 0) {
       return new Response(JSON.stringify({ error: 'No teams found' }), {
         status: 404,

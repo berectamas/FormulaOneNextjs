@@ -491,7 +491,7 @@ export default function Dashboard() {
     <div className="w-full min-h-screen p-4 bg-gray-50">
       <h1 className="text-2xl font-bold mb-4">Race Dashboard</h1>
 
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-2">
         {/* Bal oldali táblázat */}
         <div className="col-span-3 border rounded p-4 bg-white shadow h-fit">
           <StandingTable

@@ -52,3 +52,16 @@ export async function GET(req, context) {
     });
   }
 }
+/*export async function GET(req, context) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  const params = await context.params;
+  const year = params.year;
+  try {
+    const res = await fetch(`https://formulaoneproject.vercel.app/api/teams/year/${year}`);
+    const data = await res.json();
+
+    return Response.json(data);
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}*/

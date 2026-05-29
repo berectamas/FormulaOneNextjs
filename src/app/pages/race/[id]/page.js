@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 
 export default function RacePage() {
+  const isDev = process.env.NODE_ENV === 'development';
   const { id } = useParams();
   const [raceInfos, setRaceInfos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -261,7 +262,6 @@ export default function RacePage() {
       GridPosition: Number(newRowData.GridPosition),
       IsFastestLapOnTheRace: false,
     };
-    console.log(newInfo);
     try {
       const response = await fetch('/api/races/add', {
         method: 'POST',
@@ -380,14 +380,16 @@ export default function RacePage() {
           </div>
         ))}
       </div>
-      <div className="w-full mt-2">
-        <button
-          className="w-full px-4 py-3 bg-black text-white font-bold rounded hover:bg-gray-800 transition"
-          onClick={() => addNewRow(raceEventTypes[activeTab].value)}
-        >
-          Új elem felvétele
-        </button>
-      </div>
+      {isDev && (
+        <div className="w-full mt-2">
+          <button
+            className="w-full px-4 py-3 bg-black text-white font-bold rounded hover:bg-gray-800 transition"
+            onClick={() => addNewRow(raceEventTypes[activeTab].value)}
+          >
+            Új elem felvétele
+          </button>
+        </div>
+      )}
       {showModal && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-300">
           <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl w-96 max-w-full p-6 transform transition-transform duration-300 scale-95 animate-fade-in">
@@ -520,9 +522,7 @@ export default function RacePage() {
                   {FinishingStatus.map((item) => (
                     <label
                       key={item.id}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition
-          ${newRowData.FinishingStatus === item.id ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}
-        `}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition ${newRowData.FinishingStatus === item.id ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
                     >
                       <input
                         type="radio"

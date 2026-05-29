@@ -1,4 +1,4 @@
-import CalendarList from './CalendarList'; // client component
+import CalendarList from '../../components/calendar-list/CalendarList'; // client component
 
 export default async function Page({ searchParams }) {
   // await kell, hogy biztosan elérd a searchParams-t

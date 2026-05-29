@@ -1,5 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   const year = new Date().getFullYear();
@@ -11,7 +11,8 @@ export default function Home() {
         <div className="lg:w-1/2">
           <h1 className="text-5xl font-bold mb-4">Welcome to Formula One Statistics</h1>
           <p className="text-lg mb-6">
-            Explore the latest statistics, trends, and insights from the world of Formula One racing.
+            Explore the latest statistics, trends, and insights from the world of Formula One
+            racing.
           </p>
         </div>
         <div className="relative w-[600px] h-[300px] mb-3">
@@ -38,7 +39,8 @@ export default function Home() {
           </div>
           <Link
             href={{
-              pathname: `/pages/standings/${year}`,
+              pathname: `/pages/calendars`,
+              query: { year: year.toString() },
             }}
             className="inline-block border border-blue-600 text-blue-600 px-5 py-2 rounded-lg hover:bg-blue-50 transition"
           >
@@ -56,8 +58,7 @@ export default function Home() {
           </div>
           <Link
             href={{
-              pathname: "/pages/standings",
-              query: { year: year.toString() },
+              pathname: `/pages/standings/${year}`,
             }}
             className="inline-block border border-blue-600 text-blue-600 px-5 py-2 rounded-lg hover:bg-blue-50 transition"
           >

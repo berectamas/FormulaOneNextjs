@@ -3,27 +3,32 @@
 import Link from 'next/link';
 
 export default function CalendarList({ year, events }) {
+  const isDev = process.env.NODE_ENV === 'development';
   //if (!events || !events.length) return <div className="p-8 text-center">No events found</div>;
   if (!events || !events.length)
     return (
       <div className="p-8 text-center">
         <p className="mb-4">Nincs esemény a {year}. évben.</p>
-        <Link
-          href="/races/new"
-          className="btn btn-dark rounded-circle shadow d-inline-flex justify-content-center align-items-center"
-          style={{ width: '80px', height: '80px', fontSize: '2rem' }}
-          title="Új verseny hozzáadása"
-        >
-          +
-        </Link>
+        {isDev && (
+          <Link
+            href="/pages/race/new"
+            className="btn btn-dark rounded-circle shadow d-inline-flex justify-content-center align-items-center"
+            style={{ width: '80px', height: '80px', fontSize: '2rem' }}
+            title="Új verseny hozzáadása"
+          >
+            +
+          </Link>
+        )}
       </div>
     );
   return (
     <div className="max-w-3xl mx-auto p-4">
       <div className="text-center mb-4">
-        <Link href="/pages/race/new" title="Új verseny felvétele">
-          Új esemény felvétele
-        </Link>
+        {isDev && (
+          <Link href="/pages/race/new" title="Új verseny felvétele">
+            Új esemény felvétele
+          </Link>
+        )}
       </div>
       <h1 className="text-3xl font-bold mb-6">F1 Calendar {year}</h1>
       <ul className="space-y-8">

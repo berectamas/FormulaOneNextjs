@@ -9,10 +9,10 @@ export default function Navbar() {
     <nav className="w-full bg-black text-white shadow-md">
       <div className="flex justify-between h-16 items-center px-4 sm:px-6 lg:px-8">
         {/* Logo teljesen balra */}
-        <div className="flex items-center h-16">
+        <Link href="/" className="flex items-center h-16 hover:opacity-80">
           <img src="/f1.png" alt="F1 logo" width={64} height={64} className="object-contain" />
           <span className="ml-3 text-xl font-bold">Formula One</span>
-        </div>
+        </Link>
 
         {/* Linkek jobbra */}
         <div className="flex space-x-6">

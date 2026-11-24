@@ -8,36 +8,38 @@ const CanvasJSChart = dynamic(
   { ssr: false },
 );
 
-export default function MultilineChart({ data, height = '100%' }) {
+export default function MultilineChart({ data, height = 512 }) {
   const containerRef = useRef(null);
   const [chartWidth, setChartWidth] = useState(400);
+  const isMobile = chartWidth < 640;
 
   useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        setChartWidth(containerRef.current.offsetWidth);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setChartWidth(Math.max(200, Math.floor(entry.contentRect.width)));
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const options = {
     animationEnabled: true,
     theme: 'light2',
     title: {
-      text: 'Egyszerű Multiline Chart',
+      text: 'Pontok alakulása',
+      fontSize: isMobile ? 16 : 24,
     },
     axisY: {
-      title: 'Érték',
+      title: isMobile ? '' : 'Érték',
     },
     axisX: {
       title: '',
       interval: 1,
+      labelAngle: isMobile ? -90 : -45,
+      labelFontSize: isMobile ? 10 : 12,
     },
     width: chartWidth,
-    height,
+    height: isMobile ? 320 : height,
     data,
     toolTip: {
       shared: true,
@@ -48,7 +50,7 @@ export default function MultilineChart({ data, height = '100%' }) {
         const xLabel = e.entries[0].dataPoint.label ?? `Race ${e.entries[0].dataPoint.x + 1}`;
         content += `<b>${xLabel}</b><br/>`;
 
-        // Sorozatok csökkenő sorrendben a y érték szerint
+        // Sorozatok csökkenő sorrendben az y érték szerint
         const sortedEntries = [...e.entries].sort(
           (a, b) => (b.dataPoint.y ?? 0) - (a.dataPoint.y ?? 0),
         );
@@ -66,11 +68,11 @@ export default function MultilineChart({ data, height = '100%' }) {
         return content;
       },
     },
-
     legend: {
       cursor: 'pointer',
       verticalAlign: 'bottom',
       horizontalAlign: 'center',
+      fontSize: isMobile ? 11 : 14,
       itemclick: (e) => {
         e.dataSeries.visible = !e.dataSeries.visible;
         e.chart.render();
@@ -78,10 +80,8 @@ export default function MultilineChart({ data, height = '100%' }) {
     },
   };
 
-  if (!CanvasJSChart) return null;
-
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
       <CanvasJSChart options={options} />
     </div>
   );

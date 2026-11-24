@@ -1,14 +1,14 @@
 // app/page.jsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import MultilineChart from '../../../components/charts/multilineChart';
 import StandingTable from '../../../components/standing-table/standing-table';
-import { useMemo } from 'react';
 
 export default function Dashboard() {
   const { year } = useParams();
+  const yearNum = Number(year);
   const columnName = [
     'Points',
     /*'AVG Points',
@@ -30,7 +30,7 @@ export default function Dashboard() {
   const [teamChecked, setTeamChecked] = useState({});
   const [roundMin, setRoundMin] = useState(0);
   const [roundMax, setRoundMax] = useState(0);
-  const yearNum = Number(year);
+
   // Csak a Qualifying Results és Time Differences esetén lesz sub-tab
   const hasSubTabs =
     columnName[activeTab] === 'Qualifying Results' || columnName[activeTab] === 'Time Differences';
@@ -64,7 +64,7 @@ export default function Dashboard() {
   }, [year]);
 
   useEffect(() => {
-    async function fetchRace() {
+    async function fetchDrivers() {
       try {
         const res = await fetch(`/api/drivers/year/${year}`);
         const data = await res.json();
@@ -75,8 +75,9 @@ export default function Dashboard() {
         setLoading(false);
       }
     }
-    fetchRace();
+    fetchDrivers();
   }, [year]);
+
   useEffect(() => {
     async function fetchTeams() {
       try {
@@ -93,7 +94,7 @@ export default function Dashboard() {
   }, [year]);
 
   useEffect(() => {
-    async function fetchRace() {
+    async function fetchCalendar() {
       try {
         const res = await fetch(`/api/calendars/?year=${year}`);
         const data = await res.json();
@@ -121,7 +122,7 @@ export default function Dashboard() {
         setLoading(false);
       }
     }
-    fetchRace();
+    fetchCalendar();
   }, [year]);
 
   function getDriverPointsTimeline(data, selectedDrivers) {
@@ -184,6 +185,7 @@ export default function Dashboard() {
 
     return driverTimeline;
   }
+
   function getTeamPointsTimeline(data, selectedTeams) {
     const racePoints = {
       0: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
@@ -247,6 +249,7 @@ export default function Dashboard() {
 
     return teamTimeline;
   }
+
   function lightenColor(hex, percent) {
     // hex: '#ff8000', percent: 0.2 = 20% világosítás
     const num = parseInt(hex.replace('#', ''), 16);
@@ -255,6 +258,7 @@ export default function Dashboard() {
     const b = Math.min(255, (num & 0xff) + 255 * percent);
     return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
   }
+
   const handleDriverCheckedChange = (driverId) => {
     setDriverChecked((prev) => ({
       ...prev,
@@ -279,6 +283,7 @@ export default function Dashboard() {
     () => drivers.filter((d) => selectedDriverIds.includes(d._id)),
     [drivers, selectedDriverIds],
   );
+
   const selectedTeamIds = useMemo(() => {
     return Object.entries(teamChecked)
       .filter(([id, checked]) => checked)
@@ -289,6 +294,7 @@ export default function Dashboard() {
     () => teams.filter((d) => selectedTeamIds.includes(d._id)),
     [teams, selectedTeamIds],
   );
+
   // Összes versenyző pontjainak kiszámítása
   const pointsDictDrivers = useMemo(() => {
     return getDriverPointsTimeline(
@@ -360,20 +366,18 @@ export default function Dashboard() {
 
         return 0; // ha teljesen egyenlő
       });
-  }, [drivers, raceInfos, pointsDictDrivers]);
+  }, [drivers, raceInfos, pointsDictDrivers, roundMin, roundMax]);
 
   const teamStandings = useMemo(() => {
     return teams
       .map((team) => {
         const timeline = pointsDictTeams[team._id] || [];
-        const totalPoints =
-          timeline.length > 0 && timeline[timeline.length - 1] > 0
-            ? timeline[timeline.length - 1]
-            : 0;
+        const totalPoints = Math.max(0, ...timeline);
 
         // Helyezések számolása a csapat versenyzői alapján
         const positionCounts = {}; // {1: X, 2: Y, 3: Z, ...}
         raceInfos.forEach((r) => {
+          if (r.Calendar.Round < Number(roundMin) || r.Calendar.Round > Number(roundMax)) return;
           if (r.TeamId === team._id && r.RaceEvent === 0) {
             const pos = r.Position;
             if (pos) {
@@ -408,13 +412,15 @@ export default function Dashboard() {
 
         return 0; // teljesen egyenlő
       });
-  }, [teams, raceInfos, pointsDictTeams]);
+  }, [teams, raceInfos, pointsDictTeams, roundMin, roundMax]);
 
   const filteredCalendar = useMemo(() => {
     return calendar.filter((c) => c.Round >= Number(roundMin) && c.Round <= Number(roundMax));
   }, [calendar, roundMin, roundMax]);
 
   function getChartData(pointsDictDrivers, pointsDictTeams) {
+    const lastCalendarId = filteredCalendar[filteredCalendar.length - 1]?._id;
+
     const driverData = selectedDrivers.map((driver) => {
       const driverName = driver.FirstName + ' ' + driver.LastName;
       const pointsArray = pointsDictDrivers[driver._id] || [];
@@ -422,19 +428,16 @@ export default function Dashboard() {
         raceInfos
           .find(
             (r) =>
-              r.CalendarId === filteredCalendar[filteredCalendar.length - 1]._id &&
-              r.DriverId === driver._id &&
-              r.RaceEvent === 0,
+              r.CalendarId === lastCalendarId && r.DriverId === driver._id && r.RaceEvent === 0,
           )
-          ?.Team?.Years?.find((y) => y.Year === Number(year))?.Color ||
+          ?.Team?.Years?.find((y) => y.Year === yearNum)?.Color ||
         raceInfos
           .find((r) => r.DriverId === driver._id && r.RaceEvent === 0)
-          ?.Team?.Years?.find((y) => y.Year === Number(year))?.Color ||
+          ?.Team?.Years?.find((y) => y.Year === yearNum)?.Color ||
         '#000'; // alapértelmezett fekete, ha egyik sem található
 
       const driverIndex = selectedDrivers.findIndex((d) => d._id === driver._id) + 1;
-      console.log(driverIndex);
-      const driverColor = lightenColor(baseColor, driverIndex * 0.03); // 15% árnyalatkülönbség
+      const driverColor = lightenColor(baseColor, driverIndex * 0.03);
       return {
         type: 'line',
         name: driverName,
@@ -457,12 +460,9 @@ export default function Dashboard() {
       const teamColor =
         raceInfos
           .find(
-            (r) =>
-              r.CalendarId === filteredCalendar[filteredCalendar.length - 1]._id &&
-              r.TeamId === team._id &&
-              r.RaceEvent === 0,
+            (r) => r.CalendarId === lastCalendarId && r.TeamId === team._id && r.RaceEvent === 0,
           )
-          ?.Team?.Years?.find((y) => y.Year === Number(year))?.Color || '#000';
+          ?.Team?.Years?.find((y) => y.Year === yearNum)?.Color || '#000';
       return {
         type: 'line',
         name: teamName,
@@ -494,12 +494,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full min-h-screen p-4 bg-gray-50">
+    <div className="w-full min-h-screen p-2 sm:p-4 bg-gray-50">
       <h1 className="text-2xl font-bold mb-4">Race Dashboard</h1>
 
-      <div className="grid grid-cols-12 gap-2">
-        {/* Bal oldali táblázat */}
-        <div className="col-span-3 border rounded p-4 bg-white shadow h-fit">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2">
+        {/* Pilóták táblázata */}
+        <div className="xl:col-span-3 min-w-0 border rounded p-2 sm:p-4 bg-white shadow h-fit">
           <StandingTable
             standings={driverStandings}
             checked={driverChecked}
@@ -509,7 +509,9 @@ export default function Dashboard() {
             columnName="Points"
           />
         </div>
-        <div className="col-span-3 border rounded p-4 bg-white shadow h-fit">
+
+        {/* Csapatok táblázata */}
+        <div className="xl:col-span-3 min-w-0 border rounded p-2 sm:p-4 bg-white shadow h-fit">
           <StandingTable
             standings={teamStandings}
             checked={teamChecked}
@@ -521,7 +523,7 @@ export default function Dashboard() {
         </div>
 
         {/* Jobb oldali tartalom */}
-        <div className="col-span-6">
+        <div className="xl:col-span-6 min-w-0">
           {/* Fő tabok */}
           <ul className="flex border-b mb-4">
             {columnName.map((name, index) => (
@@ -537,7 +539,8 @@ export default function Dashboard() {
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-4 mb-4 ml-1">
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 ml-1">
             <label className="text-gray-700">
               From:
               <input
@@ -585,8 +588,8 @@ export default function Dashboard() {
             </ul>
           )}
 
-          {/* Chart placeholder */}
-          <div className="border p-6 rounded shadow bg-white">
+          {/* Chart */}
+          <div className="border p-2 sm:p-6 rounded shadow bg-white min-w-0 overflow-hidden">
             <p className="text-gray-700">
               Selected Tab: <strong>{columnName[activeTab]}</strong>
             </p>
@@ -595,7 +598,7 @@ export default function Dashboard() {
                 Selected SubTab: <strong>{subColumnName[activeSubTab]}</strong>
               </p>
             )}
-            <div className="mt-4 h-128 w-full bg-gray-100 flex items-center justify-center">
+            <div className="mt-4 w-full min-w-0 overflow-hidden bg-gray-100 flex items-center justify-center">
               <MultilineChart
                 data={getChartData(pointsDictDrivers, pointsDictTeams)}
                 height={512}

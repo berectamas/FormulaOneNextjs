@@ -31,6 +31,9 @@ export async function GET(req, context) {
             'Years.Year': yearNumber,
           },
         },
+        {
+          $sort: { Name: 1 },
+        },
       ])
       .toArray();
     if (!teams || teams.length === 0) {

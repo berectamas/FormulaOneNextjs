@@ -1,4 +1,5 @@
 import clientPromise from '../../lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function GET(req) {
   try {
@@ -61,6 +62,53 @@ export async function GET(req) {
 
     return new Response(JSON.stringify(tracks), {
       status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('API error:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+
+    if (!body.Name || !body.CountryId) {
+      return new Response(JSON.stringify({ error: 'Name és CountryId kötelező' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const client = await clientPromise;
+    const db = client.db('FormulaOne');
+
+    // 1) Track
+    const trackResult = await db.collection('Tracks').insertOne({
+      Name: body.Name,
+      Description: body.Description || '',
+      CountryId: new ObjectId(body.CountryId),
+    });
+    const trackId = trackResult.insertedId;
+
+    // 2) Specification + kép (csak ha van kép)
+    if (body.ImageUrl) {
+      const specResult = await db.collection('TrackSpecifications').insertOne({
+        TrackId: trackId,
+      });
+
+      await db.collection('TrackImages').insertOne({
+        TrackSpecificationId: specResult.insertedId,
+        URL: body.ImageUrl,
+      });
+    }
+
+    return new Response(JSON.stringify({ _id: trackId }), {
+      status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {

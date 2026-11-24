@@ -35,7 +35,9 @@ export async function GET(req, context) {
             'Years.Year': yearNumber,
           },
         },
-
+        {
+          $sort: { FirstName: 1, LastName: 1 },
+        },
         {
           $lookup: {
             from: 'RaceInformations',

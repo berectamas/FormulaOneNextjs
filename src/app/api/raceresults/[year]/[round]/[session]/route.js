@@ -1,49 +1,59 @@
+async function fetchJolpica(url) {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'FormulaOneApp/1.0 (saját-email@példa.hu)',
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error(`Jolpica hiba ${res.status}: ${text.slice(0, 200)}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Nem JSON válasz: ${text.slice(0, 200)}`);
+  }
+}
+
 export async function GET(req, context) {
   const params = await context.params;
   const year = params.year;
   const round = params.round;
-  const session = parseInt(params.session);
+  const session = parseInt(params.session, 10);
+
   try {
-    let url = '';
+    let endpoint;
+    let resultKey;
+
     if (session === 0) {
-      url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/results.json`;
-      const res = await fetch(url);
-
-      const text = await res.text();
-
-      const data = JSON.parse(text);
-      const returnData = data.MRData.RaceTable.Races[0].Results;
-      return Response.json(returnData);
+      endpoint = 'results';
+      resultKey = 'Results';
+    } else if (session > 0 && session < 4) {
+      endpoint = 'qualifying';
+      resultKey = 'QualifyingResults';
+    } else if (session === 4) {
+      endpoint = 'sprint';
+      resultKey = 'SprintResults';
+    } else {
+      return Response.json({ error: 'Ismeretlen session' }, { status: 400 });
     }
-    if (session > 0 && session < 4) {
-      url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/qualifying.json`;
-      const res = await fetch(url);
 
-      const text = await res.text();
+    const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/${endpoint}.json`;
+    const data = await fetchJolpica(url);
 
-      const data = JSON.parse(text);
-      const returnData = data.MRData.RaceTable.Races[0].QualifyingResults;
-      return Response.json(returnData);
+    const race = data?.MRData?.RaceTable?.Races?.[0];
+    if (!race) {
+      return Response.json({ error: 'Nincs ilyen futam' }, { status: 404 });
     }
-    if (session === 4) {
-      url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/sprint.json`;
-      const res = await fetch(url);
 
-      const text = await res.text();
-
-      const data = JSON.parse(text);
-      const returnData = data.MRData.RaceTable.Races[0].SprintResults;
-      return Response.json(returnData);
-    }
-    return Response.json(session);
+    return Response.json(race[resultKey] ?? []);
   } catch (err) {
-    return Response.json(
-      {
-        error: 'Server crashed',
-        message: err.message,
-        stack: err.stack,
-      },
-      { status: 500 },
-    );
+    console.error('Jolpica API error:', err);
+    return Response.json({ error: 'Server crashed', message: err.message }, { status: 500 });
   }
 }

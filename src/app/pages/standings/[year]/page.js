@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [teamChecked, setTeamChecked] = useState({});
   const [roundMin, setRoundMin] = useState(0);
   const [roundMax, setRoundMax] = useState(0);
+  const yearNum = Number(year);
   // Csak a Qualifying Results és Time Differences esetén lesz sub-tab
   const hasSubTabs =
     columnName[activeTab] === 'Qualifying Results' || columnName[activeTab] === 'Time Differences';
@@ -129,52 +130,54 @@ export default function Dashboard() {
       4: [8, 7, 6, 5, 4, 3, 2, 1], // sprint
     };
 
-    // Roundok kigyűjtése
     const rounds = [...new Set(data.map((r) => r.Calendar.Round))]
       .sort((a, b) => a - b)
       .filter((r) => (!roundMin || r >= roundMin) && (!roundMax || r <= roundMax));
 
+    // Mely roundokon volt sprint (bármelyik versenyzőnél)
+    const sprintRounds = new Set(
+      data.filter((d) => d.RaceEvent === 4).map((d) => d.Calendar.Round),
+    );
+
     const driverTimeline = {};
-    const driverTotals = {};
 
     selectedDrivers.forEach((driver) => {
       const driverId = driver._id;
       driverTimeline[driverId] = [];
-      driverTotals[driverId] = 0;
+      let total = 0;
+
       rounds.forEach((round) => {
-        // 1. Sprint először
-        const sprintEntry = data.find(
-          (d) => d.DriverId === driverId && d.Calendar.Round === round && d.RaceEvent === 4,
-        );
-        if (sprintEntry) {
-          const pos = sprintEntry.Position;
-          const pts = racePoints[4][pos - 1] || 0;
-          driverTotals[driverId] += pts;
-          driverTimeline[driverId].push(driverTotals[driverId]);
+        // Sprint slot
+        if (sprintRounds.has(round)) {
+          const sprintEntry = data.find(
+            (d) => d.DriverId === driverId && d.Calendar.Round === round && d.RaceEvent === 4,
+          );
+          if (sprintEntry) {
+            total += racePoints[4][sprintEntry.Position - 1] || 0;
+            driverTimeline[driverId].push(total);
+          } else {
+            driverTimeline[driverId].push(-1); // nem vett részt
+          }
         }
 
-        // 2. Főverseny
+        // Főverseny slot
         const mainEntry = data.find(
           (d) => d.DriverId === driverId && d.Calendar.Round === round && d.RaceEvent === 0,
         );
         if (mainEntry) {
           let points = racePoints[0][mainEntry.Position - 1] || 0;
-          // Gyors kör
           if (
             mainEntry.IsFastestLapOnTheRace &&
             mainEntry.Position <= 10 &&
-            year > 2019 &&
-            year < 2025
+            yearNum > 2019 &&
+            yearNum < 2025
           ) {
             points += 1;
           }
-          driverTotals[driverId] += points;
-          driverTimeline[driverId].push(driverTotals[driverId]);
-        }
-
-        // Ha egyik sem volt, -1
-        if (!sprintEntry && !mainEntry) {
-          driverTimeline[driverId].push(-1);
+          total += points;
+          driverTimeline[driverId].push(total);
+        } else {
+          driverTimeline[driverId].push(-1); // nem vett részt
         }
       });
     });
@@ -183,64 +186,65 @@ export default function Dashboard() {
   }
   function getTeamPointsTimeline(data, selectedTeams) {
     const racePoints = {
-      0: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], // főverseny
-      4: [8, 7, 6, 5, 4, 3, 2, 1], // sprint
+      0: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
+      4: [8, 7, 6, 5, 4, 3, 2, 1],
     };
 
-    // Roundok kigyűjtése
     const rounds = [...new Set(data.map((r) => r.Calendar.Round))]
       .sort((a, b) => a - b)
       .filter((r) => (!roundMin || r >= roundMin) && (!roundMax || r <= roundMax));
 
+    const sprintRounds = new Set(
+      data.filter((d) => d.RaceEvent === 4).map((d) => d.Calendar.Round),
+    );
+
     const teamTimeline = {};
-    const teamTotals = {};
 
     selectedTeams.forEach((team) => {
       const teamId = team._id;
       teamTimeline[teamId] = [];
-      teamTotals[teamId] = 0;
+      let total = 0;
+
       rounds.forEach((round) => {
-        // 1. Sprint először
-        const sprintEntries = data.filter(
-          (d) => d.TeamId === teamId && d.Calendar.Round === round && d.RaceEvent === 4,
-        );
-        let pts = sprintEntries.reduce(
-          (sum, entry) => sum + (racePoints[4][entry.Position - 1] || 0),
-          0,
-        );
-        if (sprintEntries.length > 0) {
-          teamTotals[teamId] += pts;
-          teamTimeline[teamId].push(teamTotals[teamId]);
+        // Sprint slot
+        if (sprintRounds.has(round)) {
+          const sprintEntries = data.filter(
+            (d) => d.TeamId === teamId && d.Calendar.Round === round && d.RaceEvent === 4,
+          );
+          if (sprintEntries.length > 0) {
+            total += sprintEntries.reduce(
+              (sum, e) => sum + (racePoints[4][e.Position - 1] || 0),
+              0,
+            );
+            teamTimeline[teamId].push(total);
+          } else {
+            teamTimeline[teamId].push(-1);
+          }
         }
 
-        // 2. Főverseny
-        pts = 0;
+        // Főverseny slot
         const mainEntries = data.filter(
           (d) => d.TeamId === teamId && d.Calendar.Round === round && d.RaceEvent === 0,
         );
-        mainEntries.forEach((entry) => {
-          // Pozíció alapján kapott pontok
-          pts += racePoints[0][entry.Position - 1] || 0;
-
-          // Gyors kör bónusz
-          if (entry.IsFastestLapOnTheRace && entry.Position <= 10 && year > 2019 && year < 2025) {
-            pts += 1;
-          }
-        });
-
         if (mainEntries.length > 0) {
-          // Csapat összesített pontjai
-          teamTotals[teamId] += pts;
-
-          // Csapat pontok idővonala
-          teamTimeline[teamId].push(teamTotals[teamId]);
-        }
-        if (mainEntries.length == 0 && sprintEntries.length == 0) {
+          mainEntries.forEach((entry) => {
+            total += racePoints[0][entry.Position - 1] || 0;
+            if (
+              entry.IsFastestLapOnTheRace &&
+              entry.Position <= 10 &&
+              yearNum > 2019 &&
+              yearNum < 2025
+            ) {
+              total += 1;
+            }
+          });
+          teamTimeline[teamId].push(total);
+        } else {
           teamTimeline[teamId].push(-1);
         }
-        // Ha egyik sem volt, -1
       });
     });
+
     return teamTimeline;
   }
   function lightenColor(hex, percent) {
@@ -315,14 +319,12 @@ export default function Dashboard() {
     return drivers
       .map((driver) => {
         const timeline = pointsDictDrivers[driver._id] || [];
-        const totalPoints =
-          timeline.length > 0 && timeline[timeline.length - 1] > 0
-            ? timeline[timeline.length - 1]
-            : 0;
+        const totalPoints = Math.max(0, ...timeline);
 
         // Helyezések számolása
         const positionCounts = {}; // pl. {1: 3, 2: 2, 3: 1, ...}
         raceInfos.forEach((r) => {
+          if (r.Calendar.Round < Number(roundMin) || r.Calendar.Round > Number(roundMax)) return;
           if (r.DriverId === driver._id && r.RaceEvent === 0) {
             const pos = r.Position;
             if (pos) {
@@ -439,6 +441,8 @@ export default function Dashboard() {
         color: driverColor,
         markerColor: driverColor,
         lineColor: driverColor,
+        connectNullData: true, // a kihagyott futamnál a vonal összeköti a két részvételt
+        markerType: 'circle',
         showInLegend: true,
         dataPoints: pointsArray.map((points, index) => ({
           label: filteredCalendar[index]?.Name || `Race ${index + 1}`,
@@ -465,6 +469,8 @@ export default function Dashboard() {
         color: teamColor,
         markerColor: teamColor,
         lineColor: teamColor,
+        connectNullData: true, // a kihagyott futamnál a vonal összeköti a két részvételt
+        markerType: 'square',
         showInLegend: true,
         dataPoints: pointsArray.map((points, index) => ({
           label: filteredCalendar[index]?.Name || `Race ${index + 1}`,
